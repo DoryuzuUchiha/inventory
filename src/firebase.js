@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAnalytics } from "firebase/analytics";
+import dynamic from 'next/dynamic';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -20,7 +20,16 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firestore
 const firestore = getFirestore(app);
 
-// Initialize Analytics
-const analytics = getAnalytics(app);
+// Initialize Analytics only in the browser
+let analytics;
+if (typeof window !== 'undefined') {
+  import('firebase/analytics').then(({ getAnalytics, isSupported }) => {
+    isSupported().then(supported => {
+      if (supported) {
+        analytics = getAnalytics(app);
+      }
+    });
+  });
+}
 
 export { firestore, analytics };

@@ -1,26 +1,15 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { Box, Stack, Typography, IconButton, Modal, TextField, Collapse, Button } from '@mui/material'
+import { useState, useEffect } from 'react';
+import { Box, Stack, Typography, IconButton, Modal, TextField, Collapse, Button } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CancelIcon from '@mui/icons-material/Cancel';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import dynamic from 'next/dynamic'
-import { firestore } from '@/firebase'
-import {
-  collection,
-  doc,
-  getDocs,
-  query,
-  setDoc,
-  updateDoc,
-  increment,
-  getDoc,
-  deleteDoc
-} from 'firebase/firestore'
+import dynamic from 'next/dynamic';
+import { collection, doc, getDocs, query, setDoc, updateDoc, increment, getDoc, deleteDoc } from 'firebase/firestore';
 
 // Import client-side Firebase functions dynamically
-const firestoreClient = dynamic(() => import('@/firebase').then(mod => mod.firestore), { ssr: false });
+const firestore = dynamic(() => import('@/firebase').then(mod => mod.firestore), { ssr: false });
 
 const style = {
   position: 'absolute',
@@ -35,94 +24,102 @@ const style = {
   display: 'flex',
   flexDirection: 'column',
   gap: 3,
-}
+};
 
 export default function Home() {
-  const [inventory, setInventory] = useState([])
-  const [open, setOpen] = useState(false)
-  const [itemName, setItemName] = useState('')
-  const [collapse, setCollapse] = useState(true)
-  const [selectedItem, setSelectedItem] = useState(null)
-  const [removeQuantity, setRemoveQuantity] = useState(0)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [inventory, setInventory] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [itemName, setItemName] = useState('');
+  const [collapse, setCollapse] = useState(true);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [removeQuantity, setRemoveQuantity] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const fetchInventory = async () => {
-      const snapshot = query(collection(firestoreClient, 'inventory'))
-      const docs = await getDocs(snapshot)
-      const inventoryList = []
-      docs.forEach((doc) => {
-        inventoryList.push({ name: doc.id, ...doc.data() })
-      })
-      setInventory(inventoryList)
-    }
-    fetchInventory()
-  }, [])
+      const firestoreClient = (await import('@/firebase')).firestore; // Ensure dynamic import of firestore
+      const snapshot = query(collection(firestoreClient, 'inventory'));
+      const docs = await getDocs(snapshot);
+      const inventoryList = docs.docs.map(doc => ({ name: doc.id, ...doc.data() }));
+      setInventory(inventoryList);
+    };
+    fetchInventory();
+  }, []);
 
-  const handleOpen = () => setOpen(true)
+  const handleOpen = () => setOpen(true);
   const handleClose = () => {
-    setOpen(false)
-    setSelectedItem(null)
-    setRemoveQuantity(0)
-  }
+    setOpen(false);
+    setSelectedItem(null);
+    setRemoveQuantity(0);
+  };
 
   const addItem = async (name) => {
     if (name) {
-      const itemRef = doc(firestoreClient, 'inventory', name)
-      const itemDoc = await getDoc(itemRef)
+      const firestoreClient = (await import('@/firebase')).firestore; // Ensure dynamic import of firestore
+      const itemRef = doc(firestoreClient, 'inventory', name);
+      const itemDoc = await getDoc(itemRef);
 
       if (itemDoc.exists()) {
-        await updateDoc(itemRef, { quantity: increment(1) })
+        await updateDoc(itemRef, { quantity: increment(1) });
       } else {
-        await setDoc(itemRef, { quantity: 1 })
+        await setDoc(itemRef, { quantity: 1 });
       }
-      updateInventory()
+      updateInventory();
     }
-  }
+  };
 
   const removeItem = async (name, quantity) => {
     if (name && quantity > 0) {
-      const itemRef = doc(firestoreClient, 'inventory', name)
-      const itemDoc = await getDoc(itemRef)
+      const firestoreClient = (await import('@/firebase')).firestore; // Ensure dynamic import of firestore
+      const itemRef = doc(firestoreClient, 'inventory', name);
+      const itemDoc = await getDoc(itemRef);
 
       if (itemDoc.exists()) {
-        const currentQuantity = itemDoc.data().quantity
+        const currentQuantity = itemDoc.data().quantity;
         if (quantity >= currentQuantity) {
-          await deleteDoc(itemRef)
+          await deleteDoc(itemRef);
         } else {
-          await updateDoc(itemRef, { quantity: increment(-quantity) })
+          await updateDoc(itemRef, { quantity: increment(-quantity) });
         }
-        updateInventory()
+        updateInventory();
       }
-      handleClose()
+      handleClose();
     }
-  }
+  };
 
   const toggleCollapse = () => {
-    setCollapse(!collapse)
-  }
+    setCollapse(prev => !prev);
+  };
 
   const handleRemove = (item) => {
-    setSelectedItem(item)
-    setRemoveQuantity(0)
-    handleOpen()
-  }
+    setSelectedItem(item);
+    setRemoveQuantity(0);
+    handleOpen();
+  };
 
   const increaseQuantity = () => {
-    if (removeQuantity < selectedItem.quantity) {
-      setRemoveQuantity(removeQuantity + 1)
+    if (removeQuantity < (selectedItem?.quantity || 0)) {
+      setRemoveQuantity(prev => prev + 1);
     }
-  }
+  };
 
   const decreaseQuantity = () => {
     if (removeQuantity > 0) {
-      setRemoveQuantity(removeQuantity - 1)
+      setRemoveQuantity(prev => prev - 1);
     }
-  }
+  };
+
+  const updateInventory = async () => {
+    const firestoreClient = (await import('@/firebase')).firestore; // Ensure dynamic import of firestore
+    const snapshot = query(collection(firestoreClient, 'inventory'));
+    const docs = await getDocs(snapshot);
+    const inventoryList = docs.docs.map(doc => ({ name: doc.id, ...doc.data() }));
+    setInventory(inventoryList);
+  };
 
   const filteredInventory = inventory.filter(({ name }) =>
     name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  );
 
   return (
     <Box
@@ -219,7 +216,7 @@ export default function Home() {
           variant="h4"
           sx={{ marginBottom: '16px', color: '#fff' }}
         >
-          Welcome to Diego's Food Pantry
+          Welcome to Diego&apos;s Food Pantry
         </Typography>
         <TextField
           id="search-bar"
@@ -260,7 +257,7 @@ export default function Home() {
                   <Typography variant="h6" sx={{ color: '#000' }}>
                     {removeQuantity}
                   </Typography>
-                  <IconButton onClick={increaseQuantity} disabled={removeQuantity >= selectedItem.quantity}>
+                  <IconButton onClick={increaseQuantity} disabled={removeQuantity >= (selectedItem?.quantity || 0)}>
                     <ExpandMoreIcon />
                   </IconButton>
                 </Stack>
@@ -282,21 +279,18 @@ export default function Home() {
                   value={itemName}
                   onChange={(e) => setItemName(e.target.value)}
                 />
-                <IconButton
+                <Button
+                  variant="contained"
                   color="primary"
-                  onClick={() => {
-                    addItem(itemName)
-                    setItemName('')
-                    handleClose()
-                  }}
+                  onClick={() => addItem(itemName)}
                 >
-                  <AddCircleOutlineIcon />
-                </IconButton>
+                  Add Item
+                </Button>
               </Stack>
             )}
           </Box>
         </Modal>
       </Box>
     </Box>
-  )
+  );
 }
