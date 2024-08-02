@@ -5,6 +5,7 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CancelIcon from '@mui/icons-material/Cancel';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import dynamic from 'next/dynamic'
 import { firestore } from '@/firebase'
 import {
   collection,
@@ -17,6 +18,9 @@ import {
   getDoc,
   deleteDoc
 } from 'firebase/firestore'
+
+// Dynamically import the component to ensure it's only rendered on the client side
+const DynamicComponent = dynamic(() => Promise.resolve(YourComponent), { ssr: false });
 
 const style = {
   position: 'absolute',
@@ -41,11 +45,8 @@ export default function Home() {
   const [selectedItem, setSelectedItem] = useState(null)
   const [removeQuantity, setRemoveQuantity] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
-  const [isClient, setIsClient] = useState(false)
-
-  // Ensuring code is only run on the client side
+  
   useEffect(() => {
-    setIsClient(true)
     updateInventory()
   }, [])
 
@@ -125,180 +126,178 @@ export default function Home() {
   )
 
   return (
-    isClient && (
+    <Box
+      width="100vw"
+      height="100vh"
+      display={'flex'}
+      flexDirection={'row'}
+    >
+      {/* Left side for the collapsible list */}
       <Box
-        width="100vw"
-        height="100vh"
+        width="20%"
+        height="100%"
+        bgcolor={'#8B4513'}
+        borderRight={'1px solid #333'}
         display={'flex'}
-        flexDirection={'row'}
+        flexDirection={'column'}
+        padding={2}
+        position="relative"
       >
-        {/* Left side for the collapsible list */}
-        <Box
-          width="20%"
-          height="100%"
-          bgcolor={'#8B4513'}
-          borderRight={'1px solid #333'}
-          display={'flex'}
-          flexDirection={'column'}
-          padding={2}
-          position="relative"
+        <Typography
+          variant="h4"
+          sx={{ padding: '16px', bgcolor: '#A0522D', color: 'white', textAlign: 'center' }}
         >
-          <Typography
-            variant="h4"
-            sx={{ padding: '16px', bgcolor: '#A0522D', color: 'white', textAlign: 'center' }}
-          >
-            Inventory
-          </Typography>
-          <Collapse in={collapse}>
-            <Stack spacing={2} padding={2}>
-              {filteredInventory.map(({ name, quantity }) => (
-                <Box
-                  key={name}
-                  display={'flex'}
-                  justifyContent={'space-between'}
-                  alignItems={'center'}
-                  bgcolor={'#F5F5DC'}
-                  paddingX={2}
-                  paddingY={1}
-                  borderRadius={'25px'}
-                  sx={{ boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)', minHeight: '60px', position: 'relative' }}
-                >
-                  <Box>
-                    <Typography variant={'h6'} color={'#333'}>
-                      {name.charAt(0).toUpperCase() + name.slice(1)}
-                    </Typography>
-                    <Typography variant={'body1'} color={'#333'}>
-                      Quantity: {quantity}
-                    </Typography>
-                  </Box>
-                  <IconButton
-                    color="error"
-                    onClick={() => handleRemove({ name, quantity })}
-                    sx={{ position: 'absolute', top: 8, right: 8 }}
-                  >
-                    <CancelIcon />
-                  </IconButton>
+          Inventory
+        </Typography>
+        <Collapse in={collapse}>
+          <Stack spacing={2} padding={2}>
+            {filteredInventory.map(({ name, quantity }) => (
+              <Box
+                key={name}
+                display={'flex'}
+                justifyContent={'space-between'}
+                alignItems={'center'}
+                bgcolor={'#F5F5DC'}
+                paddingX={2}
+                paddingY={1}
+                borderRadius={'25px'}
+                sx={{ boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)', minHeight: '60px', position: 'relative' }}
+              >
+                <Box>
+                  <Typography variant={'h6'} color={'#333'}>
+                    {name.charAt(0).toUpperCase() + name.slice(1)}
+                  </Typography>
+                  <Typography variant={'body1'} color={'#333'}>
+                    Quantity: {quantity}
+                  </Typography>
                 </Box>
-              ))}
-            </Stack>
-          </Collapse>
-          <IconButton
-            color="primary"
-            onClick={handleOpen}
-            sx={{
-              position: 'absolute',
-              bottom: 16,
-              right: 16,
-              backgroundColor: '#D2691E',
-              color: 'white',
-              '&:hover': {
-                backgroundColor: '#CD853F',
-              },
-              boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)',
-            }}
-          >
-            <AddCircleOutlineIcon fontSize="large" />
-          </IconButton>
-        </Box>
-
-        {/* Right side for adding items */}
-        <Box
-          width="80%"
-          height="100vh"
-          display={'flex'}
-          flexDirection={'column'}
-          alignItems={'center'}
-          gap={2}
+                <IconButton
+                  color="error"
+                  onClick={() => handleRemove({ name, quantity })}
+                  sx={{ position: 'absolute', top: 8, right: 8 }}
+                >
+                  <CancelIcon />
+                </IconButton>
+              </Box>
+            ))}
+          </Stack>
+        </Collapse>
+        <IconButton
+          color="primary"
+          onClick={handleOpen}
           sx={{
-            backgroundColor: 'transparent',
-            backgroundImage: `url('/images/background.JPG')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center'
+            position: 'absolute',
+            bottom: 16,
+            right: 16,
+            backgroundColor: '#D2691E',
+            color: 'white',
+            '&:hover': {
+              backgroundColor: '#CD853F',
+            },
+            boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)',
           }}
         >
-          <Typography
-            variant="h4"
-            sx={{ marginBottom: '16px', color: '#fff' }}
-          >
-            Welcome to Diego's Food Pantry
-          </Typography>
-          <TextField
-            id="search-bar"
-            label="Search Inventory"
-            variant="outlined"
-            fullWidth
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{
-              marginBottom: '16px',
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-              borderRadius: '30px',
+          <AddCircleOutlineIcon fontSize="large" />
+        </IconButton>
+      </Box>
+
+      {/* Right side for adding items */}
+      <Box
+        width="80%"
+        height="100vh"
+        display={'flex'}
+        flexDirection={'column'}
+        alignItems={'center'}
+        gap={2}
+        sx={{
+          backgroundColor: 'transparent',
+          backgroundImage: `url('/images/background.JPG')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
+        <Typography
+          variant="h4"
+          sx={{ marginBottom: '16px', color: '#fff' }}
+        >
+          Welcome to Diego's Food Pantry
+        </Typography>
+        <TextField
+          id="search-bar"
+          label="Search Inventory"
+          variant="outlined"
+          fullWidth
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          sx={{
+            marginBottom: '16px',
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            borderRadius: '30px',
+            color: 'black',
+            input: {
               color: 'black',
-              input: {
-                color: 'black',
-              },
-            }}
-          />
-          <Modal
-            open={open}
-            onClose={handleClose}
-            aria-labelledby="modal-modal-title"
-            aria-describedby="modal-modal-description"
-          >
-            <Box sx={style}>
-              {selectedItem ? (
-                <Box>
-                  <Typography variant="body1" color={'#000'}>
-                    Current Quantity: {selectedItem.quantity}
+            },
+          }}
+        />
+        <Modal
+          open={open}
+          onClose={handleClose}
+          aria-labelledby="modal-modal-title"
+          aria-describedby="modal-modal-description"
+        >
+          <Box sx={style}>
+            {selectedItem ? (
+              <Box>
+                <Typography variant="body1" color={'#000'}>
+                  Current Quantity: {selectedItem.quantity}
+                </Typography>
+                <Typography variant="body2" sx={{ marginBottom: 2 }} color={'#000'}>
+                  How much would you like to remove?
+                </Typography>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <IconButton onClick={decreaseQuantity} disabled={removeQuantity <= 0}>
+                    <ExpandLessIcon />
+                  </IconButton>
+                  <Typography variant="h6" sx={{ color: '#000' }}>
+                    {removeQuantity}
                   </Typography>
-                  <Typography variant="body2" sx={{ marginBottom: 2 }} color={'#000'}>
-                    How much would you like to remove?
-                  </Typography>
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <IconButton onClick={decreaseQuantity} disabled={removeQuantity <= 0}>
-                      <ExpandLessIcon />
-                    </IconButton>
-                    <Typography variant="h6" sx={{ color: '#000' }}>
-                      {removeQuantity}
-                    </Typography>
-                    <IconButton onClick={increaseQuantity} disabled={removeQuantity >= selectedItem.quantity}>
-                      <ExpandMoreIcon />
-                    </IconButton>
-                  </Stack>
-                  <Button
-                    variant="contained"
-                    color="error"
-                    onClick={() => removeItem(selectedItem.name, removeQuantity)}
-                  >
-                    Remove
-                  </Button>
-                </Box>
-              ) : (
-                <Stack width="100%" direction={'row'} spacing={2}>
-                  <TextField
-                    id="outlined-basic"
-                    label="Item"
-                    variant="outlined"
-                    fullWidth
-                    value={itemName}
-                    onChange={(e) => setItemName(e.target.value)}
-                  />
-                  <IconButton
-                    color="primary"
-                    onClick={() => {
-                      addItem(itemName)
-                      setItemName('')
-                      handleClose()
-                    }}
-                  >
-                    <AddCircleOutlineIcon />
+                  <IconButton onClick={increaseQuantity} disabled={removeQuantity >= selectedItem.quantity}>
+                    <ExpandMoreIcon />
                   </IconButton>
                 </Stack>
-              )}
-            </Box>
-          </Modal>
-        </Box>
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={() => removeItem(selectedItem.name, removeQuantity)}
+                >
+                  Remove
+                </Button>
+              </Box>
+            ) : (
+              <Stack width="100%" direction={'row'} spacing={2}>
+                <TextField
+                  id="outlined-basic"
+                  label="Item"
+                  variant="outlined"
+                  fullWidth
+                  value={itemName}
+                  onChange={(e) => setItemName(e.target.value)}
+                />
+                <IconButton
+                  color="primary"
+                  onClick={() => {
+                    addItem(itemName)
+                    setItemName('')
+                    handleClose()
+                  }}
+                >
+                  <AddCircleOutlineIcon />
+                </IconButton>
+              </Stack>
+            )}
+          </Box>
+        </Modal>
       </Box>
-    )
+    </Box>
   )
 }
