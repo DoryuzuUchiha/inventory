@@ -19,8 +19,8 @@ import {
   deleteDoc
 } from 'firebase/firestore'
 
-// Dynamically import the component to ensure it's only rendered on the client side
-const DynamicComponent = dynamic(() => Promise.resolve(YourComponent), { ssr: false });
+// Import client-side Firebase functions dynamically
+const firestoreClient = dynamic(() => import('@/firebase').then(mod => mod.firestore), { ssr: false });
 
 const style = {
   position: 'absolute',
@@ -45,20 +45,19 @@ export default function Home() {
   const [selectedItem, setSelectedItem] = useState(null)
   const [removeQuantity, setRemoveQuantity] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
-  
-  useEffect(() => {
-    updateInventory()
-  }, [])
 
-  const updateInventory = async () => {
-    const snapshot = query(collection(firestore, 'inventory'))
-    const docs = await getDocs(snapshot)
-    const inventoryList = []
-    docs.forEach((doc) => {
-      inventoryList.push({ name: doc.id, ...doc.data() })
-    })
-    setInventory(inventoryList)
-  }
+  useEffect(() => {
+    const fetchInventory = async () => {
+      const snapshot = query(collection(firestoreClient, 'inventory'))
+      const docs = await getDocs(snapshot)
+      const inventoryList = []
+      docs.forEach((doc) => {
+        inventoryList.push({ name: doc.id, ...doc.data() })
+      })
+      setInventory(inventoryList)
+    }
+    fetchInventory()
+  }, [])
 
   const handleOpen = () => setOpen(true)
   const handleClose = () => {
@@ -69,7 +68,7 @@ export default function Home() {
 
   const addItem = async (name) => {
     if (name) {
-      const itemRef = doc(firestore, 'inventory', name)
+      const itemRef = doc(firestoreClient, 'inventory', name)
       const itemDoc = await getDoc(itemRef)
 
       if (itemDoc.exists()) {
@@ -83,7 +82,7 @@ export default function Home() {
 
   const removeItem = async (name, quantity) => {
     if (name && quantity > 0) {
-      const itemRef = doc(firestore, 'inventory', name)
+      const itemRef = doc(firestoreClient, 'inventory', name)
       const itemDoc = await getDoc(itemRef)
 
       if (itemDoc.exists()) {
