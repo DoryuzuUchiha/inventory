@@ -5,6 +5,11 @@
   align-items: center;
   padding: 6rem;
   min-height: 100vh;
+  background-image: url('/images/background.JPG');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: transparent; /* Just in case, to ensure no other background color overrides the image */
 }
 
 .description {
