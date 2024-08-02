@@ -216,7 +216,7 @@ export default function Home() {
           variant="h4"
           sx={{ marginBottom: '16px', color: '#fff' }}
         >
-          Welcome to Diego&apos;s Food Pantry
+          Welcome to Diego's Food Pantry
         </Typography>
         <TextField
           id="search-bar"
