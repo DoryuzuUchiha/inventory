@@ -1,6 +1,5 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import { getAnalytics, isSupported } from 'firebase/analytics';
 
 const firebaseConfig = {
   apiKey: "AIzaSyD06NSOTxoYrdY2kphX1NDW2BmvjKXm4U8",
@@ -15,14 +14,4 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const firestore = getFirestore(app);
 
-let analytics;
-if (typeof window !== 'undefined') {
-  // Only initialize analytics if window is available
-  isSupported().then(supported => {
-    if (supported) {
-      analytics = getAnalytics(app);
-    }
-  });
-}
-
-export { firestore, analytics };
+export { firestore };

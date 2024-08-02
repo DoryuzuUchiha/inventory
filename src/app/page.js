@@ -1,4 +1,5 @@
-'use client'
+'use client'; // Ensures this component only renders on the client-side
+
 import { useState, useEffect } from 'react';
 import { Box, Stack, Typography, IconButton, Modal, TextField, Collapse, Button } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
