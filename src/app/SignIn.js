@@ -1,8 +1,9 @@
 'use client';
+
 import { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/firebase';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation'; // Updated import
 import { Box, Button, TextField, Typography } from '@mui/material';
 
 export default function SignIn() {
