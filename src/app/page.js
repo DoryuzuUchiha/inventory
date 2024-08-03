@@ -1,4 +1,3 @@
-// src/app/page.js
 'use client'; // Ensure this is at the top of the file
 
 import { useState, useEffect } from 'react';
@@ -11,6 +10,18 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { auth, firestore } from '@/firebase';
 import { collection, doc, getDocs, query, setDoc, updateDoc, increment, getDoc, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
+
+const style = {
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: 400,
+  bgcolor: 'background.paper',
+  border: '2px solid #000',
+  boxShadow: 24,
+  p: 4,
+};
 
 export default function Home() {
   const [inventory, setInventory] = useState([]);
