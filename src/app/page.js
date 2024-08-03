@@ -1,15 +1,16 @@
-'use client'; // Ensure this is at the top of the file
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Stack, Typography, IconButton, Modal, TextField, Collapse, Button } from '@mui/material';
+import { Box, Stack, Typography, IconButton, Modal, TextField, Collapse, Button, Menu, MenuItem } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CancelIcon from '@mui/icons-material/Cancel';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { auth, firestore } from '@/firebase';
 import { collection, doc, getDocs, query, setDoc, updateDoc, increment, getDoc, deleteDoc } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 const style = {
   position: 'absolute',
@@ -32,6 +33,8 @@ export default function Home() {
   const [removeQuantity, setRemoveQuantity] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null); // State for menu anchor
+  const openMenu = Boolean(anchorEl);
   const router = useRouter();
 
   useEffect(() => {
@@ -118,6 +121,39 @@ export default function Home() {
   const filteredInventory = inventory.filter(({ name }) =>
     name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleSignOut = async () => {
+    await signOut(auth);
+    router.push('/signin');
+  };
+
+  const handleDeleteAccount = async () => {
+    if (user) {
+      try {
+        // Delete user data from Firestore
+        await deleteDoc(doc(firestore, 'users', user.uid));
+        
+        // Delete user from Firebase Authentication
+        await user.delete();
+        
+        // Sign out the user and redirect to sign-in page
+        await signOut(auth);
+        router.push('/signin');
+      } catch (error) {
+        console.error("Error deleting account:", error);
+        // Handle specific errors (e.g., if the user is not logged in)
+      }
+    }
+  };
+  
 
   return (
     <Box
@@ -210,6 +246,32 @@ export default function Home() {
           backgroundPosition: 'center'
         }}
       >
+        <Box
+          width="100%"
+          display="flex"
+          justifyContent="flex-end"
+          padding={2}
+        >
+          <IconButton
+            onClick={handleMenuClick}
+            color="inherit"
+            sx={{ marginRight: 2 }}
+          >
+            <AccountCircleIcon fontSize="large" />
+          </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            open={openMenu}
+            onClose={handleMenuClose}
+          >
+            <MenuItem onClick={handleMenuClose}>Settings</MenuItem>
+            <MenuItem onClick={handleMenuClose}>Account Info</MenuItem>
+            <MenuItem onClick={handleSignOut}>Sign Out</MenuItem>
+            <MenuItem onClick={handleDeleteAccount} sx={{ color: 'red' }}>
+              Delete Account
+            </MenuItem>
+          </Menu>
+        </Box>
         <Typography
           variant="h4"
           sx={{ marginBottom: '16px', color: '#fff' }}
