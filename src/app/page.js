@@ -1,7 +1,7 @@
 'use client'; // Ensure this is at the top of the file
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { Box, Stack, Typography, IconButton, Modal, TextField, Collapse, Button } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CancelIcon from '@mui/icons-material/Cancel';
