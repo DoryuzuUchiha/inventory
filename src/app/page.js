@@ -40,7 +40,7 @@ export default function Home() {
         setUser(currentUser);
         fetchInventory(currentUser.uid);
       } else {
-        router.push('/signin'); // Client-side navigation
+        router.push('/SignIn'); // Client-side navigation
       }
     });
 
