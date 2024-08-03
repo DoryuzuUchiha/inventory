@@ -208,7 +208,7 @@ export default function Home() {
         gap={2}
         sx={{
           backgroundColor: 'transparent',
-          backgroundImage: `url('/images/background.JPG')`,
+          backgroundImage: `url('/images/background.jpg')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
