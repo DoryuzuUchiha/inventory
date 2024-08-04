@@ -24,7 +24,7 @@ const style = {
   boxShadow: 24,
   p: 4,
   borderRadius: '10px',
-  backgroundImage: 'url("/images/wooden-texture.jpg")', // Rustic wood texture
+  backgroundImage: 'url("/images/wooden-texture.JPG")', // Rustic wood texture
   backgroundSize: 'cover',
 };
 
@@ -356,7 +356,7 @@ const [accountInfo, setAccountInfo] = useState({ email: '', maskedPassword: '', 
           bgcolor="rgba(255, 255, 255, 0.95)"
           padding={4}
           borderRadius={3}
-          sx={{ width: '90%', maxWidth: '450px', margin: 'auto', marginTop: '10%', background: 'url(/images/wooden-texture.jpg) center/cover' }}
+          sx={{ width: '90%', maxWidth: '450px', margin: 'auto', marginTop: '10%', background: 'url(/images/wooden-texture.JPG) center/cover' }}
         >
           <Typography variant="h5" sx={{ marginBottom: 2, color: '#FFFFFF' }}>
             Account Information
