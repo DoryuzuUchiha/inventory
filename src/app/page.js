@@ -17,11 +17,15 @@ const style = {
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
-  width: 400,
+  width: '90%',
+  maxWidth: '500px',
   bgcolor: 'background.paper',
   border: '2px solid #000',
   boxShadow: 24,
   p: 4,
+  borderRadius: '10px',
+  backgroundImage: 'url("/images/wooden-texture.jpg")', // Rustic wood texture
+  backgroundSize: 'cover',
 };
 
 export default function Home() {
@@ -33,6 +37,8 @@ export default function Home() {
   const [removeQuantity, setRemoveQuantity] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState(null);
+  const [accountInfoOpen, setAccountInfoOpen] = useState(false);
+const [accountInfo, setAccountInfo] = useState({ email: '', maskedPassword: '', totalItems: 0, uniqueItems: 0 });
   const [anchorEl, setAnchorEl] = useState(null); // State for menu anchor
   const openMenu = Boolean(anchorEl);
   const router = useRouter();
@@ -64,65 +70,61 @@ export default function Home() {
     setRemoveQuantity(0);
   };
 
-  const addItem = async (name) => {
-    if (name && user) {
-      const itemRef = doc(firestore, 'users', user.uid, 'inventory', name);
-      const itemDoc = await getDoc(itemRef);
+  const handleAddItem = async () => {
+    const userInventoryRef = doc(firestore, 'users', user.uid, 'inventory', itemName);
 
-      if (itemDoc.exists()) {
-        await updateDoc(itemRef, { quantity: increment(1) });
+    try {
+      const itemSnapshot = await getDoc(userInventoryRef);
+
+      if (itemSnapshot.exists()) {
+        await updateDoc(userInventoryRef, {
+          quantity: increment(1),
+        });
       } else {
-        await setDoc(itemRef, { quantity: 1 });
+        await setDoc(userInventoryRef, {
+          quantity: 1,
+        });
       }
       fetchInventory(user.uid);
-    }
-  };
-
-  const removeItem = async (name, quantity) => {
-    if (name && quantity > 0 && user) {
-      const itemRef = doc(firestore, 'users', user.uid, 'inventory', name);
-      const itemDoc = await getDoc(itemRef);
-
-      if (itemDoc.exists()) {
-        const currentQuantity = itemDoc.data().quantity;
-        if (quantity >= currentQuantity) {
-          await deleteDoc(itemRef);
-        } else {
-          await updateDoc(itemRef, { quantity: increment(-quantity) });
-        }
-        fetchInventory(user.uid);
-      }
+    } catch (err) {
+      console.error('Error adding item:', err);
+    } finally {
+      setItemName('');
       handleClose();
     }
   };
 
-  const toggleCollapse = () => {
-    setCollapse(prev => !prev);
-  };
+  const handleRemoveItem = async () => {
+    if (!selectedItem) return;
 
-  const handleRemove = (item) => {
-    setSelectedItem(item);
-    setRemoveQuantity(0);
-    handleOpen();
-  };
+    const userInventoryRef = doc(firestore, 'users', user.uid, 'inventory', selectedItem.name);
 
-  const increaseQuantity = () => {
-    if (removeQuantity < (selectedItem?.quantity || 0)) {
-      setRemoveQuantity(prev => prev + 1);
+    try {
+      const newQuantity = selectedItem.quantity - removeQuantity;
+      if (newQuantity > 0) {
+        await updateDoc(userInventoryRef, {
+          quantity: newQuantity,
+        });
+      } else {
+        await deleteDoc(userInventoryRef);
+      }
+      fetchInventory(user.uid);
+    } catch (err) {
+      console.error('Error removing item:', err);
+    } finally {
+      handleClose();
     }
   };
 
-  const decreaseQuantity = () => {
-    if (removeQuantity > 0) {
-      setRemoveQuantity(prev => prev - 1);
-    }
+  const handleSearch = (event) => {
+    setSearchQuery(event.target.value);
   };
 
-  const filteredInventory = inventory.filter(({ name }) =>
-    name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleCollapseToggle = () => {
+    setCollapse(!collapse);
+  };
 
-  const handleMenuClick = (event) => {
+  const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
@@ -131,10 +133,32 @@ export default function Home() {
   };
 
   const handleSignOut = async () => {
-    await signOut(auth);
-    router.push('/signin');
+    try {
+      await signOut(auth);
+      router.push('/signin');
+    } catch (err) {
+      console.error('Error signing out:', err);
+    }
   };
-
+  
+  const handleAccountInfo = async () => {
+    if (user) {
+      const userInventoryRef = collection(firestore, 'users', user.uid, 'inventory');
+      const snapshot = await getDocs(query(userInventoryRef));
+      const inventoryList = snapshot.docs.map(doc => doc.data());
+  
+      const totalItems = inventoryList.reduce((total, item) => total + item.quantity, 0);
+      const uniqueItems = inventoryList.length;
+  
+      setAccountInfo({
+        email: user.email,
+        maskedPassword: '*'.repeat(8),
+        totalItems,
+        uniqueItems,
+      });
+      setAccountInfoOpen(true);
+    }
+  };
   const handleDeleteAccount = async () => {
     if (user) {
       try {
@@ -155,201 +179,203 @@ export default function Home() {
   };
   
 
+  const filteredInventory = inventory.filter((item) =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <Box
-      width="100vw"
-      height="100vh"
-      display={'flex'}
-      flexDirection={'row'}
+      sx={{
+        height: '100vh',
+        backgroundImage: `url('/images/sibackground.JPG')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundBlendMode: 'multiply',
+        backgroundColor: 'rgba(139,69,19, 0.7)', // Dark overlay for rustic feel
+        color: '#fff',
+        padding: 2,
+        overflowY: 'auto',
+      }}
     >
-      {/* Left side for the collapsible list */}
-      <Box
-        width="20%"
-        height="100%"
-        bgcolor={'#8B4513'}
-        borderRight={'1px solid #333'}
-        display={'flex'}
-        flexDirection={'column'}
-        padding={2}
-        position="relative"
-      >
-        <Typography
-          variant="h4"
-          sx={{ padding: '16px', bgcolor: '#A0522D', color: 'white', textAlign: 'center' }}
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ marginBottom: 3 }}>
+        <Typography variant="h4" sx={{ fontFamily: 'Georgia, serif' }}>
+          Pantry Inventory
+        </Typography>
+        <IconButton onClick={handleMenuOpen} color="inherit">
+          <AccountCircleIcon fontSize="large" />
+        </IconButton>
+        <Menu
+          anchorEl={anchorEl}
+          open={openMenu}
+          onClose={handleMenuClose}
         >
+          <MenuItem onClick={handleAccountInfo}>Account Info</MenuItem>
+          <MenuItem onClick={handleSignOut}>Sign Out</MenuItem>
+          <MenuItem onClick={handleDeleteAccount} sx={{ color: 'red' }}>
+            Delete Account
+          </MenuItem>
+        </Menu>
+      </Stack>
+
+      <TextField
+        label="Search Items"
+        variant="outlined"
+        fullWidth
+        value={searchQuery}
+        onChange={handleSearch}
+        sx={{
+          marginBottom: 3,
+          backgroundColor: 'white',
+          borderRadius: '5px',
+        }}
+      />
+
+      <Stack direction="row" alignItems="center" onClick={handleCollapseToggle} sx={{ cursor: 'pointer', marginBottom: 2 }}>
+        <Typography variant="h6" sx={{ fontFamily: 'Georgia, serif' }}>
           Inventory
         </Typography>
-        <Collapse in={collapse}>
-          <Stack spacing={2} padding={2}>
-            {filteredInventory.map(({ name, quantity }) => (
-              <Box
-                key={name}
-                display={'flex'}
-                justifyContent={'space-between'}
-                alignItems={'center'}
-                bgcolor={'#F5F5DC'}
-                paddingX={2}
-                paddingY={1}
-                borderRadius={'25px'}
-                sx={{ boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)', minHeight: '60px', position: 'relative' }}
-              >
-                <Box>
-                  <Typography variant={'h6'} color={'#333'}>
-                    {name.charAt(0).toUpperCase() + name.slice(1)}
-                  </Typography>
-                  <Typography variant={'body1'} color={'#333'}>
-                    Quantity: {quantity}
-                  </Typography>
-                </Box>
-                <IconButton
-                  color="error"
-                  onClick={() => handleRemove({ name, quantity })}
-                  sx={{ position: 'absolute', top: 8, right: 8 }}
-                >
+        {collapse ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+      </Stack>
+
+      <Collapse in={collapse} timeout="auto" unmountOnExit>
+        <Stack spacing={2}>
+          {filteredInventory.map((item) => (
+            <Box
+              key={item.name}
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              sx={{
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                borderRadius: '10px',
+                padding: '10px 15px',
+                boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+              }}
+            >
+              <Typography variant="body1" sx={{ fontFamily: 'Georgia, serif', color: '#333' }}>
+                {item.name} - {item.quantity}
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                <IconButton onClick={() => { setSelectedItem(item); setOpen(true); }} color="inherit">
                   <CancelIcon />
                 </IconButton>
-              </Box>
-            ))}
-          </Stack>
-        </Collapse>
-        <IconButton
-          color="primary"
-          onClick={handleOpen}
-          sx={{
-            position: 'absolute',
-            bottom: 16,
-            right: 16,
-            backgroundColor: '#D2691E',
-            color: 'white',
-            '&:hover': {
-              backgroundColor: '#CD853F',
-            },
-            boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)',
-          }}
-        >
-          <AddCircleOutlineIcon fontSize="large" />
-        </IconButton>
-      </Box>
+              </Stack>
+            </Box>
+          ))}
+        </Stack>
+      </Collapse>
 
-      {/* Right side for adding items */}
-      <Box
-        width="80%"
-        height="100vh"
-        display={'flex'}
-        flexDirection={'column'}
-        alignItems={'center'}
-        gap={2}
+      <IconButton
+        onClick={handleOpen}
         sx={{
-          backgroundColor: 'transparent',
-          backgroundImage: `url('/images/background.jpg')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          backgroundColor: '#8B4513',
+          color: '#fff',
+          '&:hover': { backgroundColor: '#A0522D' },
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+          padding: '15px',
         }}
       >
-        <Box
-          width="100%"
-          display="flex"
-          justifyContent="flex-end"
-          padding={2}
-        >
-          <IconButton
-            onClick={handleMenuClick}
-            color="inherit"
-            sx={{ marginRight: 2 }}
-          >
-            <AccountCircleIcon fontSize="large" />
-          </IconButton>
-          <Menu
-            anchorEl={anchorEl}
-            open={openMenu}
-            onClose={handleMenuClose}
-          >
-            <MenuItem onClick={handleMenuClose}>Settings</MenuItem>
-            <MenuItem onClick={handleMenuClose}>Account Info</MenuItem>
-            <MenuItem onClick={handleSignOut}>Sign Out</MenuItem>
-            <MenuItem onClick={handleDeleteAccount} sx={{ color: 'red' }}>
-              Delete Account
-            </MenuItem>
-          </Menu>
+        <AddCircleOutlineIcon fontSize="large" />
+      </IconButton>
+
+      <Modal
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+      >
+        <Box sx={style}>
+          {selectedItem ? (
+            <>
+              <Typography id="modal-modal-title" variant="h5" component="h2" sx={{ marginBottom: 2, color: '#000', fontFamily: 'Georgia, serif' }}>
+                Remove Item
+              </Typography>
+              <Typography sx={{ color: '#000', marginBottom: 2, fontFamily: 'Georgia, serif' }}>
+                Current Quantity: {selectedItem.quantity}
+              </Typography>
+              <TextField
+                label="How much would you like to remove?"
+                variant="outlined"
+                fullWidth
+                type="number"
+                value={removeQuantity}
+                onChange={(e) => setRemoveQuantity(Number(e.target.value))}
+                sx={{ marginBottom: 2, backgroundColor: 'white' }}
+              />
+              <Button
+                variant="contained"
+                sx={{
+                  bgcolor: '#8B4513',
+                  '&:hover': { bgcolor: '#A0522D' },
+                  color: '#fff',
+                  fontFamily: 'Cursive, sans-serif',
+                }}
+                onClick={handleRemoveItem}
+              >
+                Remove
+              </Button>
+            </>
+          ) : (
+            <>
+              <Typography id="modal-modal-title" variant="h5" component="h2" sx={{ marginBottom: 2, color: '#000', fontFamily: 'Georgia, serif' }}>
+                Add Item
+              </Typography>
+              <TextField
+                label="Item Name"
+                variant="outlined"
+                fullWidth
+                value={itemName}
+                onChange={(e) => setItemName(e.target.value)}
+                sx={{ marginBottom: 2, backgroundColor: 'white' }}
+              />
+              <Button
+                variant="contained"
+                sx={{
+                  bgcolor: '#8B4513',
+                  '&:hover': { bgcolor: '#A0522D' },
+                  color: '#fff',
+                  fontFamily: 'Cursive, sans-serif',
+                }}
+                onClick={handleAddItem}
+              >
+                Add
+              </Button>
+            </>
+          )}
         </Box>
-        <Typography
-          variant="h4"
-          sx={{ marginBottom: '16px', color: '#fff' }}
+      </Modal>
+      <Modal open={accountInfoOpen} onClose={() => setAccountInfoOpen(false)}>
+        <Box
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          bgcolor="rgba(255, 255, 255, 0.95)"
+          padding={4}
+          borderRadius={3}
+          sx={{ width: '90%', maxWidth: '450px', margin: 'auto', marginTop: '10%', background: 'url(/images/wooden-texture.jpg) center/cover' }}
         >
-          Welcome to Diego&apos;s Food Pantry
-        </Typography>
-        <TextField
-          id="search-bar"
-          label="Search Inventory"
-          variant="outlined"
-          fullWidth
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{
-            marginBottom: '16px',
-            backgroundColor: 'rgba(255, 255, 255, 0.8)',
-            borderRadius: '30px',
-            color: 'black',
-            input: {
-              color: 'black',
-            },
-          }}
-        />
-        <Modal
-          open={open}
-          onClose={handleClose}
-          aria-labelledby="modal-modal-title"
-          aria-describedby="modal-modal-description"
-        >
-          <Box sx={style}>
-            {selectedItem ? (
-              <Box>
-                <Typography variant="body1" color={'#000'}>
-                  Current Quantity: {selectedItem.quantity}
-                </Typography>
-                <Typography variant="body2" sx={{ marginBottom: 2 }} color={'#000'}>
-                  How much would you like to remove?
-                </Typography>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <IconButton onClick={decreaseQuantity} disabled={removeQuantity <= 0}>
-                    <ExpandLessIcon />
-                  </IconButton>
-                  <Typography>{removeQuantity}</Typography>
-                  <IconButton onClick={increaseQuantity} disabled={removeQuantity >= selectedItem.quantity}>
-                    <ExpandMoreIcon />
-                  </IconButton>
-                </Stack>
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  onClick={() => removeItem(selectedItem.name, removeQuantity)}
-                  sx={{ marginTop: 2 }}
-                >
-                  Remove Item
-                </Button>
-              </Box>
-            ) : (
-              <Box>
-                <TextField
-                  label="Item Name"
-                  variant="outlined"
-                  fullWidth
-                  value={itemName}
-                  onChange={(e) => setItemName(e.target.value)}
-                  margin="normal"
-                />
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => addItem(itemName)}
-                >
-                  Add Item
-                </Button>
-              </Box>
-            )}
-          </Box>
-        </Modal>
-      </Box>
+          <Typography variant="h5" sx={{ marginBottom: 2, color: '#FFFFFF' }}>
+            Account Information
+          </Typography>
+          <Typography variant="body1" sx={{ marginBottom: 1, color: '#FFFFFF' }}>
+            Email: {accountInfo.email}
+          </Typography>
+          <Typography variant="body1" sx={{ marginBottom: 1, color: '#FFFFFF' }}>
+            Password: {accountInfo.maskedPassword}
+          </Typography>
+          <Typography variant="body1" sx={{ marginBottom: 1, color: '#FFFFFF' }}>
+            Total Items: {accountInfo.totalItems}
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#FFFFFF' }}>
+            Unique Items: {accountInfo.uniqueItems}
+          </Typography>
+        </Box>
+      </Modal>
     </Box>
   );
 }
+
