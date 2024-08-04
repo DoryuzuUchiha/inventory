@@ -72,7 +72,7 @@ export default function SignIn() {
         sx={{ width: '80%', maxWidth: '400px' }}
       >
         <Typography variant="h3" sx={{ color: '#8B4513', fontWeight: 'bold', marginBottom: 2 }}>
-          Welcome Back!
+          Welcome!
         </Typography>
         <Image src={rusticDivider} alt="Rustic Divider" width={400} height={10} />
         <Typography variant="h6" sx={{ color: '#8B4513', marginBottom: 3 }}>
